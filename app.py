@@ -1,26 +1,35 @@
 import streamlit as st
-import sqlite3
+import psycopg2
 from datetime import datetime
-
-DB_PATH = "airworthiness.db"
 
 st.set_page_config(page_title="Accueil - Suivi Navigabilité", layout="wide")
 
 now = datetime.now().date()
 
-# Fonctions utilitaires globales
+# 📦 Connexion PostgreSQL via secrets.toml
+def get_pg_connection():
+    return psycopg2.connect(
+        host=st.secrets["postgres"]["host"],
+        database=st.secrets["postgres"]["database"],
+        user=st.secrets["postgres"]["user"],
+        password=st.secrets["postgres"]["password"],
+        port=st.secrets["postgres"]["port"]
+    )
+
+# 🔢 Compter les lignes dans une table PostgreSQL
 def count_rows(query):
-    with sqlite3.connect(DB_PATH) as conn:
+    with get_pg_connection() as conn:
         c = conn.cursor()
         c.execute(query)
         return c.fetchone()[0]
 
+# ⚠️ Tâches de monitoring en retard
 def count_monitoring_urgent():
-    with sqlite3.connect(DB_PATH) as conn:
+    overdue = []
+    with get_pg_connection() as conn:
         c = conn.cursor()
         c.execute("SELECT engine_esn, category, description, due_date FROM condition_monitoring")
         rows = c.fetchall()
-        overdue = []
         for esn, cat, desc, date in rows:
             try:
                 due = datetime.strptime(date, "%Y-%m-%d").date()
@@ -28,18 +37,18 @@ def count_monitoring_urgent():
                     overdue.append((esn, cat, desc, due))
             except:
                 continue
-        return overdue
+    return overdue
 
-# Redirection helper
+# 🔁 Redirection helper
 def redirect_to_visualiser(filter_key):
     st.query_params["filter"] = filter_key
     st.switch_page("pages/1_visualiser.py")
 
-# Données
+# 📋 Données de monitoring
 overdue_tasks = count_monitoring_urgent()
 nb_overdue = len(overdue_tasks)
 
-# Barre du haut avec alerte 🔔
+# 🔔 Alerte en haut
 cols_top = st.columns([0.9, 0.1])
 with cols_top[1]:
     if nb_overdue:
@@ -47,15 +56,14 @@ with cols_top[1]:
             st.sidebar.subheader("📋 Tâches en retard")
             for i, (esn, cat, desc, date) in enumerate(overdue_tasks):
                 st.sidebar.markdown(f"🔴 **{esn}** | {cat} → {desc} – 📆 {date}")
-
     else:
         st.button("🔔", key="top_alert_disabled")
 
-# Titre et date
+# 🛫 Titre
 st.title("🛫 Tableau de bord global - Moteurs & APU")
 st.caption(f"📅 Date actuelle : {now}")
 
-# Bloc synthèse des 8 éléments à suivre
+# Synthèse des 8 éléments suivis
 col1, col2, col3 = st.columns(3)
 
 with col1:
