@@ -2,12 +2,7 @@ import streamlit as st
 import psycopg2
 from datetime import datetime
 
-try:
-    with get_pg_connection() as conn:
-        st.success("✅ Connexion PostgreSQL réussie.")
-except Exception as e:
-    st.error(f"❌ Erreur de connexion : {e}")
-    st.stop()
+
 
 
 st.set_page_config(page_title="Accueil - Suivi Navigabilité", layout="wide")
@@ -24,6 +19,13 @@ def get_pg_connection():
         port=st.secrets["postgres"]["port"],
         sslmode='require'  # 🔒 important pour Supabase
     )
+
+try:
+    with get_pg_connection() as conn:
+        st.success("✅ Connexion PostgreSQL réussie.")
+except Exception as e:
+    st.error(f"❌ Erreur de connexion : {e}")
+    st.stop()
 
 
 # 🔢 Compter les lignes dans une table PostgreSQL
