@@ -21,8 +21,10 @@ def get_pg_connection():
         database=st.secrets["postgres"]["database"],
         user=st.secrets["postgres"]["user"],
         password=st.secrets["postgres"]["password"],
-        port=st.secrets["postgres"]["port"]
+        port=st.secrets["postgres"]["port"],
+        sslmode='require'  # 🔒 important pour Supabase
     )
+
 
 # 🔢 Compter les lignes dans une table PostgreSQL
 def count_rows(query):
