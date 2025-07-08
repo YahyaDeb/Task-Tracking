@@ -2,6 +2,14 @@ import streamlit as st
 import psycopg2
 from datetime import datetime
 
+try:
+    with get_pg_connection() as conn:
+        st.success("✅ Connexion PostgreSQL réussie.")
+except Exception as e:
+    st.error(f"❌ Erreur de connexion : {e}")
+    st.stop()
+
+
 st.set_page_config(page_title="Accueil - Suivi Navigabilité", layout="wide")
 
 now = datetime.now().date()
